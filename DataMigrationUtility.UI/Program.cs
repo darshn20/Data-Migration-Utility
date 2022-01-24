@@ -48,7 +48,7 @@ namespace DataMigrationUtility.UI
 
                 int newId = newMigrationData.ID;
 
-                Task applyMigration = ApplyMigrations(StartNumber, EndNumber);
+                Task applyMigration = ApplyMigrations(StartNumber, EndNumber, cancellationToken);
 
                 Task CancelStatusTask = Task.Run(() =>
                 {

@@ -5,85 +5,91 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DataMigrationUtility.UI
 {
     public class Operation
     {
-        public static async Task ApplyMigrations(int start, int end)
+        public static async Task ApplyMigrations(int start, int end, CancellationTokenSource cancellationToken)
         {
 
             int total = end - start + 1;
             int temp = start;
-
-            while (total != 0)
+            if (!cancellationToken.IsCancellationRequested)
             {
-
-                var SourceTableData = new List<SourceTable>();
-                if (total > 100)
+                while (total != 0)
                 {
+
+                    var SourceTableData = new List<SourceTable>();
+                    if (total > 100)
+                    {
+                        try
+                        {
+                            var newContext = new DataMigrationUtilityDbContext();
+                            SourceTableData = await newContext.SourceTable
+                            .Where(x => (x.ID >= temp && x.ID < temp + 100)).ToListAsync();
+                        }
+                        catch (ArgumentNullException ex)
+                        {
+                            Console.WriteLine("ArgumentNullException :" + ex.Message);
+                        }
+
+                        temp += 100;
+                        total -= 100;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var newContext = new DataMigrationUtilityDbContext();
+                            SourceTableData = await newContext.SourceTable
+                            .Where(x => (x.ID >= temp && x.ID <= end)).ToListAsync();
+                        }
+                        catch (ArgumentNullException ex)
+                        {
+                            Console.WriteLine("ArgumentNullException :" + ex.Message);
+                        }
+                        total = 0;
+                    }
+
                     try
                     {
-                        var newContext = new DataMigrationUtilityDbContext();
-                        SourceTableData = await newContext.SourceTable
-                        .Where(x => (x.ID >= temp && x.ID < temp + 100)).ToListAsync();
+                        Task t = Task.Factory.StartNew(() => AddData(SourceTableData, cancellationToken));
+                        await t;
                     }
                     catch (ArgumentNullException ex)
                     {
                         Console.WriteLine("ArgumentNullException :" + ex.Message);
                     }
-
-                    temp += 100;
-                    total -= 100;
                 }
-                else
-                {
-                    try
-                    {
-                        var newContext = new DataMigrationUtilityDbContext();
-                        SourceTableData = await newContext.SourceTable
-                        .Where(x => (x.ID >= temp && x.ID <= end)).ToListAsync();
-                    }
-                    catch (ArgumentNullException ex)
-                    {
-                        Console.WriteLine("ArgumentNullException :" + ex.Message);
-                    }
-                    total = 0;
-                }
-
-                try
-                {
-                    Task t = Task.Factory.StartNew(() => AddData(SourceTableData));
-                    await t;
-                }
-                catch (ArgumentNullException ex)
-                {
-                    Console.WriteLine("ArgumentNullException :" + ex.Message);
-                } 
             }
         }
 
-        private static async Task AddData(List<SourceTable> SourceTableData)
+        private static async Task AddData(List<SourceTable> SourceTableData, CancellationTokenSource cancellationToken)
         {
-            var IdData = SourceTableData.Select(x => x.ID).ToArray();
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                var IdData = SourceTableData.Select(x => x.ID).ToArray();
 
-            var DestinationTableData = new List<DestinationTable>();
-            int i = 0;
-            foreach (var item in SourceTableData)
-            {
-                DestinationTableData.Add(new DestinationTable()
+                var DestinationTableData = new List<DestinationTable>();
+                int i = 0;
+                foreach (var item in SourceTableData)
                 {
-                    SourceTableID = IdData[i],
-                    Sum = await Sum(item.FirstNumber, item.SecondNumber)
-                });
-                i++;
+                    DestinationTableData.Add(new DestinationTable()
+                    {
+                        SourceTableID = IdData[i],
+                        Sum = await Sum(item.FirstNumber, item.SecondNumber)
+                    });
+                    i++;
+                }
+                using (var newContext = new DataMigrationUtilityDbContext())
+                {
+                    await newContext.DestinationTable.AddRangeAsync(DestinationTableData);
+                    newContext.SaveChanges();
+                }
             }
-            using (var newContext = new DataMigrationUtilityDbContext())
-            {
-                await newContext.DestinationTable.AddRangeAsync(DestinationTableData);
-                newContext.SaveChanges();
-            }  
         }
 
         public static MigrationTable CreateNewMigration(int StartNumber, int EndNumber)
