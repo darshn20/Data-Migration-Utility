@@ -43,6 +43,7 @@ namespace DataMigrationUtility.UI
                 Console.WriteLine("\t Type CANCEL for Cancelling migration");
                 Console.WriteLine("\t Type STATUS for Information about migrations");
                 Console.WriteLine("----------------------------------------------------");
+
                 MigrationTable newMigrationData = CreateNewMigration(StartNumber, EndNumber);
 
                 int newId = newMigrationData.ID;
@@ -61,14 +62,12 @@ namespace DataMigrationUtility.UI
                                 Console.WriteLine("\nMigration Canceled\n");
 
                                 cancellationToken.Cancel();
-
                                 break;
                             }
                             else if (str.Equals("status",StringComparison.OrdinalIgnoreCase))
                             {
                                 ShowStatus();
                             }
-
                         }
                     }
                 });

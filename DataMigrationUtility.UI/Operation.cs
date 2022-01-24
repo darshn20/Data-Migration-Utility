@@ -60,11 +60,8 @@ namespace DataMigrationUtility.UI
                 catch (ArgumentNullException ex)
                 {
                     Console.WriteLine("ArgumentNullException :" + ex.Message);
-                }
-                
-                
+                } 
             }
-
         }
 
         private static async Task AddData(List<SourceTable> SourceTableData)
@@ -82,9 +79,11 @@ namespace DataMigrationUtility.UI
                 });
                 i++;
             }
-            var newContext = new DataMigrationUtilityDbContext();
-            await newContext.DestinationTable.AddRangeAsync(DestinationTableData);
-            newContext.SaveChanges();
+            using (var newContext = new DataMigrationUtilityDbContext())
+            {
+                await newContext.DestinationTable.AddRangeAsync(DestinationTableData);
+                newContext.SaveChanges();
+            }  
         }
 
         public static MigrationTable CreateNewMigration(int StartNumber, int EndNumber)
@@ -96,10 +95,12 @@ namespace DataMigrationUtility.UI
                 Status = "OnGoing"
             };
 
-            var newContext = new DataMigrationUtilityDbContext();
-            newContext.MigrationTable.Add(newMigrationData);
-            newContext.SaveChanges();
-            return newMigrationData;
+            using (var newContext = new DataMigrationUtilityDbContext())
+            {
+                newContext.MigrationTable.Add(newMigrationData);
+                newContext.SaveChanges();
+                return newMigrationData;
+            }   
         }
 
         public static void ShowStatus()
@@ -146,22 +147,26 @@ namespace DataMigrationUtility.UI
 
         public static void UpdateCanceledMigration(int newId)
         {
-            var newContext = new DataMigrationUtilityDbContext();
-            var MigrationData =  newContext.MigrationTable.Find(newId);
-            MigrationData.Status = "Canceled";
-            newContext.MigrationTable.Attach(MigrationData);
-            newContext.SaveChanges();
+            using (var newContext = new DataMigrationUtilityDbContext())
+            {
+                var MigrationData = newContext.MigrationTable.Find(newId);
+                MigrationData.Status = "Canceled";
+                newContext.MigrationTable.Attach(MigrationData);
+                newContext.SaveChanges();
+            }   
         }
 
         public static void UpdateCompletedMigration(int StartNumber, int EndNumber, int newId)
         {
             Console.WriteLine($"Migration {StartNumber} to {EndNumber} Completed");
 
-            var newContext = new DataMigrationUtilityDbContext();
-            var MigrationData = newContext.MigrationTable.Find(newId);
-            MigrationData.Status = "Completed";
-            newContext.MigrationTable.Attach(MigrationData);
-            newContext.SaveChanges();
+            using (var newContext = new DataMigrationUtilityDbContext())
+            {
+                var MigrationData = newContext.MigrationTable.Find(newId);
+                MigrationData.Status = "Completed";
+                newContext.MigrationTable.Attach(MigrationData);
+                newContext.SaveChanges();
+            }   
         }
     }
 }
