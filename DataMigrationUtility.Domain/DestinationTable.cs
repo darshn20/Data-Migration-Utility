@@ -10,6 +10,7 @@ namespace DataMigrationUtility.Domain
     {
         public int ID { get; set; }
         public int Sum { get; set; }
+        
         public int SourceTableID { get; set; }
     }
 }

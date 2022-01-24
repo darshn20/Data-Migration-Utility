@@ -23,36 +23,26 @@ namespace DataMigrationUtility.UI
                 {
 
                     var SourceTableData = new List<SourceTable>();
+
+                    try
+                    {
+                        int tempEnd = (total > 100) ? (temp + 100) : end + 1;
+                        var newContext = new DataMigrationUtilityDbContext();
+                        SourceTableData = await newContext.SourceTable
+                        .Where(x => (x.ID >= temp && x.ID < tempEnd)).ToListAsync();
+                    }
+                    catch (ArgumentNullException ex)
+                    {
+                        Console.WriteLine("ArgumentNullException :" + ex.Message);
+                    }
+
                     if (total > 100)
                     {
-                        try
-                        {
-                            var newContext = new DataMigrationUtilityDbContext();
-                            SourceTableData = await newContext.SourceTable
-                            .Where(x => (x.ID >= temp && x.ID < temp + 100)).ToListAsync();
-                        }
-                        catch (ArgumentNullException ex)
-                        {
-                            Console.WriteLine("ArgumentNullException :" + ex.Message);
-                        }
-
                         temp += 100;
                         total -= 100;
                     }
                     else
-                    {
-                        try
-                        {
-                            var newContext = new DataMigrationUtilityDbContext();
-                            SourceTableData = await newContext.SourceTable
-                            .Where(x => (x.ID >= temp && x.ID <= end)).ToListAsync();
-                        }
-                        catch (ArgumentNullException ex)
-                        {
-                            Console.WriteLine("ArgumentNullException :" + ex.Message);
-                        }
                         total = 0;
-                    }
 
                     try
                     {
@@ -106,7 +96,7 @@ namespace DataMigrationUtility.UI
                 newContext.MigrationTable.Add(newMigrationData);
                 newContext.SaveChanges();
                 return newMigrationData;
-            }   
+            }
         }
 
         public static void ShowStatus()
@@ -159,7 +149,7 @@ namespace DataMigrationUtility.UI
                 MigrationData.Status = "Canceled";
                 newContext.MigrationTable.Attach(MigrationData);
                 newContext.SaveChanges();
-            }   
+            }
         }
 
         public static void UpdateCompletedMigration(int StartNumber, int EndNumber, int newId)
@@ -172,7 +162,7 @@ namespace DataMigrationUtility.UI
                 MigrationData.Status = "Completed";
                 newContext.MigrationTable.Attach(MigrationData);
                 newContext.SaveChanges();
-            }   
+            }
         }
     }
 }
