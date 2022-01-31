@@ -21,7 +21,6 @@ namespace DataMigrationUtility.UI
             {
                 while (total != 0)
                 {
-
                     var SourceTableData = new List<SourceTable>();
 
                     try
